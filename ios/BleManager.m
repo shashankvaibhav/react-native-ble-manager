@@ -456,23 +456,35 @@ RCT_EXPORT_METHOD(checkState)
     }
 }
 
-RCT_EXPORT_METHOD(write:(NSString *)deviceUUID serviceUUID:(NSString*)serviceUUID  characteristicUUID:(NSString*)characteristicUUID message:(NSArray*)message maxByteSize:(NSInteger)maxByteSize callback:(nonnull RCTResponseSenderBlock)callback)
+- (NSData *)dataFromHexString:(NSString *) string  {
+    if([string length] % 2 == 1){
+        string = [@"0"stringByAppendingString:string];
+    }
+
+    const char *chars = [string UTF8String];
+    int i = 0, len = self.length;
+
+    NSMutableData *data = [NSMutableData dataWithCapacity:len / 2];
+    char byteChars[3] = {'\0','\0','\0'};
+    unsigned long wholeByte;
+
+    while (i < len) {
+        byteChars[0] = chars[i++];
+        byteChars[1] = chars[i++];
+        wholeByte = strtoul(byteChars, NULL, 16);
+        [data appendBytes:&wholeByte length:1];
+    }
+
+    return data;
+}
+
+RCT_EXPORT_METHOD(write:(NSString *)deviceUUID serviceUUID:(NSString*)serviceUUID  characteristicUUID:(NSString*)characteristicUUID message:(NSString*)hexString maxByteSize:(NSInteger)maxByteSize callback:(nonnull RCTResponseSenderBlock)callback)
 {
     NSLog(@"Write");
     
     BLECommandContext *context = [self getData:deviceUUID serviceUUIDString:serviceUUID characteristicUUIDString:characteristicUUID prop:CBCharacteristicPropertyWrite callback:callback];
     
-    unsigned long c = [message count];
-    uint8_t *bytes = malloc(sizeof(*bytes) * c);
-    
-    unsigned i;
-    for (i = 0; i < c; i++)
-    {
-        NSNumber *number = [message objectAtIndex:i];
-        int byte = [number intValue];
-        bytes[i] = byte;
-    }
-    NSData *dataMessage = [NSData dataWithBytesNoCopy:bytes length:c freeWhenDone:YES];
+    NSData *dataMessage = [self dataFromHexString:hexString];
     
     if (context) {
         RCTLogInfo(@"Message to write(%lu): %@ ", (unsigned long)[message count], message);
