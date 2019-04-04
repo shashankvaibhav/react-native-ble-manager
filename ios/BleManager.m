@@ -487,7 +487,6 @@ RCT_EXPORT_METHOD(write:(NSString *)deviceUUID serviceUUID:(NSString*)serviceUUI
     NSData *dataMessage = [self dataFromHexString:hexString];
     
     if (context) {
-        RCTLogInfo(@"Message to write(%lu): %@ ", (unsigned long)[message count], message);
         CBPeripheral *peripheral = [context peripheral];
         CBCharacteristic *characteristic = [context characteristic];
         
